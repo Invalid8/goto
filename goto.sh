@@ -24,8 +24,15 @@ _goto_shortcut_paths() {
 }
 
 _goto_project_dirs() {
-    find "${GOTO_ROOTS[@]}" -mindepth 1 -maxdepth "$GOTO_SEARCH_DEPTH" \
-        \( -name node_modules -o -name '.*' \) -prune -o -type d -print 2>/dev/null
+    find "${GOTO_ROOTS[@]}" -mindepth 1 -maxdepth $((GOTO_SEARCH_DEPTH + 1)) \
+        \( -name node_modules -o -name '.*' \) -prune -o -printf '%d\t%y\t%p\n' 2>/dev/null |
+        awk -F'\t' -v max="$GOTO_SEARCH_DEPTH" '
+            $1 <= max { if ($2 == "d") print $3; next }
+            {
+                parent = $3; sub(/\/[^\/]*$/, "", parent)
+                if ($2 == "d") inner[$3] = parent; else has_files[parent] = 1
+            }
+            END { for (dir in inner) if (!(inner[dir] in has_files)) print dir }'
 }
 
 _goto_project_paths() {

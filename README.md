@@ -72,7 +72,8 @@ goto edit              edit the shortcut file
 A name resolves in this order:
 
 1. an exact shortcut in `~/.goto_dirs`
-2. a folder under `~/Projects` (two levels deep) with exactly that name
+2. a folder under `~/Projects` with exactly that name, searched two levels deep plus one more inside
+   folders that hold only other folders, such as `~/Projects/Web/design-enginering/my-showcase`
 3. shortcuts and folders whose name starts with it
 4. shortcuts and folders whose name contains it
 

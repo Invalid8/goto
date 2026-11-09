@@ -18,7 +18,7 @@ On 1 Nov 2026 I rebuilt it:
 
 - 42 shortcuts, covering the projects themselves and not only the categories
 - any folder under `~/Projects` reachable by name, with no shortcut needed
-- partial names, matched exact → prefix → contains
+- partial names, matched exact → prefix → contains → typo → abbreviation
 - a pick menu when several folders match, ranked by how often I visit each one
 - `goto <name> <subdir>` to land inside a project
 - `goto add`, `rm`, `recent`, `edit` and `help`
@@ -53,8 +53,9 @@ $ goto cosmic
 goto>
 ```
 
-`goto we` now opens a menu headed by `~/Projects/Web` instead of failing. `goto worj` still finds nothing,
-since matching is by prefix and substring, not fuzzy spelling.
+`goto we` now opens a menu headed by `~/Projects/Web` instead of failing. Typos and abbreviations land too:
+`goto worj` and `goto wrok` reach `~/Projects/Work`, `goto basebnad` reaches `baseband`, and `goto pvm`
+reaches `penielvault-mobile`.
 
 ## Usage
 
@@ -72,12 +73,19 @@ goto edit              edit the shortcut file
 A name resolves in this order:
 
 1. an exact shortcut in `~/.goto_dirs`
-2. a folder under `~/Projects` with exactly that name, searched two levels deep plus one more inside
-   folders that hold only other folders, such as `~/Projects/Web/design-enginering/my-showcase`
+2. a shortcut or folder under `~/Projects` with exactly that name, ignoring case
 3. shortcuts and folders whose name starts with it
 4. shortcuts and folders whose name contains it
+5. names one typo away: a wrong, missing, extra or swapped letter
+6. names that start with its first letter and contain the rest in order, so `pvm` finds
+   `penielvault-mobile`
 
-The first stage with any match wins. One match jumps straight there; more than one opens the menu.
+The first stage with any match wins. One match jumps straight there; more than one opens the menu. Stages 5
+and 6 need at least three letters.
+
+Folders are searched two levels deep. One level further down, a folder also counts when it is a git repo
+(`Work/fefy-workspace/fefy-admin`) or when its parent holds only other folders
+(`Web/design-enginering/my-showcase`).
 
 ## Files
 

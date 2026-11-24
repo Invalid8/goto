@@ -98,7 +98,11 @@ Folders are searched two levels deep. One level further down, a folder also coun
 | `~/.goto_dirs` | my shortcuts, one `name=~/path` per line |
 | `~/.goto_history` | every visit, used for ranking and `goto recent` (last 1000 kept) |
 
-Settings such as the search roots, depth and recent count are the variables at the top of `goto.sh`.
+The search roots are whichever of `~/Projects`, `~/projects`, `~/Documents/Projects`, `~/Documents/projects`,
+`~/code`, `~/Code`, `~/dev`, `~/src` and `~/workspace` exist on the machine. To choose them yourself, list
+them one per line in `~/.config/goto/roots`, for example `~/Documents/projects`. Shortcuts whose folder is
+missing are shown as `(missing)` and skipped, so the name falls through to the folder search. Depth and
+recent count are the variables at the top of `goto.sh`.
 
 ## Install
 
@@ -108,4 +112,18 @@ Settings such as the search roots, depth and recent count are the variables at t
 
 It links `~/.config/goto/goto.sh` to this repo, adds `. "$HOME/.config/goto/goto.sh"` to `~/.bashrc` if
 it isn't there, and creates `~/.goto_dirs` from `dirs.example` if that file doesn't exist. An existing
-shortcut file is never touched. Open a new shell afterwards.
+shortcut file is never touched. Then load it into the current terminal, or open a new one:
+
+```sh
+source ~/.bashrc
+```
+
+## Update
+
+```sh
+cd path/to/goto && git pull
+source ~/.bashrc
+```
+
+The installed `goto.sh` is a symlink to this repo, so pulling is enough; there's no need to rerun
+`install.sh`. Run `source ~/.bashrc` in each open terminal (or open a new one) to pick up the change.

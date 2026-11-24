@@ -22,6 +22,8 @@ fi
 if [ -e "$dirs" ]; then
     echo "$dirs already exists, left as is"
 else
-    cp "$repo/dirs.example" "$dirs"
-    echo "created $dirs from dirs.example"
+    while IFS='=' read -r name dir; do
+        if [ -d "${dir/#\~/$HOME}" ]; then printf '%s=%s\n' "$name" "$dir"; fi
+    done < "$repo/dirs.example" > "$dirs"
+    echo "created $dirs from the dirs.example entries that exist here"
 fi

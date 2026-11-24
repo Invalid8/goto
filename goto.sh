@@ -1,6 +1,17 @@
 GOTO_FILE="$HOME/.goto_dirs"
 GOTO_HISTORY="$HOME/.goto_history"
-GOTO_ROOTS=("$HOME/Projects")
+GOTO_ROOTS_FILE="$HOME/.config/goto/roots"
+GOTO_ROOTS=()
+if [ -s "$GOTO_ROOTS_FILE" ]; then
+    while IFS= read -r _goto_root; do
+        [ -n "$_goto_root" ] && GOTO_ROOTS+=("${_goto_root/#\~/$HOME}")
+    done < "$GOTO_ROOTS_FILE"
+else
+    for _goto_root in "$HOME"/{Projects,projects,Documents/Projects,Documents/projects,code,Code,dev,src,workspace}; do
+        [ -d "$_goto_root" ] && GOTO_ROOTS+=("$_goto_root")
+    done
+fi
+unset _goto_root
 GOTO_SEARCH_DEPTH=2
 GOTO_HISTORY_LIMIT=1000
 GOTO_RECENT_COUNT=15
@@ -17,13 +28,13 @@ _goto_lookup() {
 }
 
 _goto_candidates() {
-    awk -v home="$HOME" '{
-        i = index($0, "=")
-        if (i < 2) next
-        dir = substr($0, i + 1)
-        if (substr(dir, 1, 1) == "~") dir = home substr(dir, 2)
-        print substr($0, 1, i - 1) "\t" dir
-    }' "$GOTO_FILE"
+    local name dir root
+    while IFS='=' read -r name dir; do
+        dir="${dir/#\~/$HOME}"
+        [ -n "$name" ] && [ -d "$dir" ] && printf '%s\t%s\n' "$name" "$dir"
+    done < "$GOTO_FILE"
+    [ ${#GOTO_ROOTS[@]} -gt 0 ] || return 0
+    for root in "${GOTO_ROOTS[@]}"; do printf '%s\t%s\n' "${root##*/}" "$root"; done
     find "${GOTO_ROOTS[@]}" -mindepth 1 -maxdepth $((GOTO_SEARCH_DEPTH + 2)) \
         -name .git -printf 'repo\t\t%h\n' -prune -o \
         \( -name node_modules -o -name '.*' \) -prune -o \
@@ -99,9 +110,9 @@ _goto_pick() {
 
 _goto_resolve() {
     local dest matches
-    dest=$(_goto_lookup "$1")
-    if [ -n "$dest" ]; then
-        _GOTO_DEST=$(_goto_expand "$dest")
+    dest=$(_goto_expand "$(_goto_lookup "$1")")
+    if [ -n "$dest" ] && [ -d "$dest" ]; then
+        _GOTO_DEST="$dest"
         return 0
     fi
     mapfile -t matches < <(_goto_matches "$1")
@@ -127,9 +138,19 @@ _goto_jump() {
 
 _goto_list() {
     sort -t= -k2 "$GOTO_FILE" | while IFS='=' read -r name dir; do
-        printf '  \e[1m%-16s\e[0m %s\n' "$name" "$dir"
+        if [ -d "$(_goto_expand "$dir")" ]; then
+            printf '  \e[1m%-16s\e[0m %s\n' "$name" "$dir"
+        else
+            printf '  \e[2m%-16s %s (missing)\e[0m\n' "$name" "$dir"
+        fi
     done
-    printf '\n  Any folder under %s also works by name.\n' "$(_goto_shorten "${GOTO_ROOTS[*]}")"
+    if [ ${#GOTO_ROOTS[@]} -eq 0 ]; then
+        printf '\n  No project folder found. List yours, one per line, in ~/.config/goto/roots.\n'
+        return
+    fi
+    local root roots=()
+    for root in "${GOTO_ROOTS[@]}"; do roots+=("$(_goto_shorten "$root")"); done
+    printf '\n  Any folder under %s also works by name.\n' "${roots[*]}"
 }
 
 _goto_add() {
